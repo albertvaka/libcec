@@ -187,6 +187,13 @@ void CRPiCECAdapterCommunication::OnDataReceived(uint32_t header, uint32_t p0, u
   case VC_CEC_BUTTON_PRESSED:
   case VC_CEC_REMOTE_PRESSED:
     {
+      // TEMPORARY DEBUG: log every raw press notification from the VideoCore CEC service,
+      // to check whether VC_CEC_BUTTON_PRESSED and VC_CEC_REMOTE_PRESSED are both fired
+      // for the same physical keypress. Remove once confirmed.
+      LIB_CEC->AddLog(CEC_LOG_DEBUG, "RPI-DEBUG: press notification reason:%s keycode:%02x initiator:%x follower:%x",
+                       reason == VC_CEC_BUTTON_PRESSED ? "VC_CEC_BUTTON_PRESSED" : "VC_CEC_REMOTE_PRESSED",
+                       (uint8_t)CEC_CB_OPERAND1(p0), CEC_CB_INITIATOR(p0), CEC_CB_FOLLOWER(p0));
+
       // translate into a cec_command
       cec_command command;
       cec_command::Format(command,
@@ -202,12 +209,18 @@ void CRPiCECAdapterCommunication::OnDataReceived(uint32_t header, uint32_t p0, u
   case VC_CEC_BUTTON_RELEASE:
   case VC_CEC_REMOTE_RELEASE:
     {
+      // TEMPORARY DEBUG: log every raw release notification from the VideoCore CEC service.
+      // Remove once confirmed.
+      LIB_CEC->AddLog(CEC_LOG_DEBUG, "RPI-DEBUG: release notification reason:%s keycode:%02x initiator:%x follower:%x",
+                       reason == VC_CEC_BUTTON_RELEASE ? "VC_CEC_BUTTON_RELEASE" : "VC_CEC_REMOTE_RELEASE",
+                       (uint8_t)CEC_CB_OPERAND1(p0), CEC_CB_INITIATOR(p0), CEC_CB_FOLLOWER(p0));
+
       // translate into a cec_command
       cec_command command;
       cec_command::Format(command,
                           (cec_logical_address)CEC_CB_INITIATOR(p0),
                           (cec_logical_address)CEC_CB_FOLLOWER(p0),
-                          reason == VC_CEC_BUTTON_PRESSED ? CEC_OPCODE_USER_CONTROL_RELEASE : CEC_OPCODE_VENDOR_REMOTE_BUTTON_UP);
+                          reason == VC_CEC_BUTTON_RELEASE ? CEC_OPCODE_USER_CONTROL_RELEASE : CEC_OPCODE_VENDOR_REMOTE_BUTTON_UP);
       command.parameters.PushBack((uint8_t)CEC_CB_OPERAND1(p0));
 
       // send to libCEC

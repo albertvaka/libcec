@@ -1111,6 +1111,15 @@ void CCECClient::AddKey(const cec_keypress &key)
     {
       m_updateButtontime = GetTimeMs();
       m_releaseButtontime = m_updateButtontime + (m_configuration.iButtonReleaseDelayMs ? m_configuration.iButtonReleaseDelayMs : CEC_BUTTON_TIMEOUT);
+      // a non-zero duration for the key that's already the current button is just a "still
+      // down" update (e.g. a duplicate press notification from the adapter, such as a
+      // vendor-specific remote button report arriving in addition to the regular CEC
+      // <User Control Pressed> message), not a new, distinct keypress. Don't queue it again.
+      if (key.duration > 0)
+      {
+        LIB_CEC->AddLog(CEC_LOG_DEBUG, "ignoring duplicate press of key %s (%1x) D:%dms", ToString(key.keycode), key.keycode, key.duration);
+        isrepeat = true;
+      }
       // want to have seen some updated before considering a repeat
       if (m_configuration.iButtonRepeatRateMs)
       {
